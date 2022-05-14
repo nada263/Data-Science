@@ -1,0 +1,109 @@
+#install.packages("data.table")
+library(data.table)
+######## [SECTION 1] > Review of Big Data Analytic Methods ##########
+
+# step 1:
+ # load dataframe 
+  Zeta <- read.csv("zeta.csv")
+ # [1.1] > Analyze the zeta table
+  summary(Zeta)
+  # Record col names :
+  ColNames <- colnames(Zeta)
+  cat("Names of Cols : \n")
+  cat(ColNames)
+ # [1.2] > Record num of rows 
+   NumOfRows <- nrow(Zeta)
+   cat("Num Of Rows : \n")
+   cat(NumOfRows)
+ # [1.3] & [1.4] & [1.5] > Check Duplication & remove duplication & save the new table
+   if( sum(duplicated(Zeta)) == 0 ){
+      cat("No duplicate rows \n")
+     }else{
+     cat("There are duplicate rows \n")
+     distinct(Zeta)
+     write.csv(Zeta,"“zeta_nodupes.csv", row.names = FALSE)
+    }
+
+# Step 2:
+ # [2.1] > Load the text file of income data
+  zipIncome <- read.table("zipIncome.txt" , sep = ",", header = TRUE)
+ # [2.2] > Change the column names
+  colnames(Zeta)[ColNames %in% c("zcta" ,"meanhouseholdincome")]<- c("zipCode","income")
+ # [2.3] > Analyze summary of income col
+  Cat("summary of income in zeta table \n")
+  summary(Zeta$income)
+ # [2.4] > Plot a scatter of income col
+  plot(Zeta$income ,ylab = "Income", main = "Income_Col")
+ # [2.5] > omit outliers of income col
+  Zeta<- subset(Zeta, Zeta$income>7000 & Zeta$income<200000 )
+ # [2.6] > summary of income after omitting outliers
+  Cat("summary of income in zeta table after omitting outliers \n")
+  summary(Zeta$income)
+  # scatter of income col after omitting outliers  
+  plot(Zeta$income , ylab = "Income" , main = "Income_Col after omitting outliers")
+
+# Step 3:
+ # [3.1] > create simple boxplot of income col
+  boxplot(Zeta$income,ylab = "Income",main="Income_Col")
+ # [3.2] > create boxplot after log income col
+  LogIncome = log10(Zeta$income)
+  boxplot(LogIncome,ylab = "Log10(Income)",main="Log10(Income_Col)")
+
+  
+######## [SECTION 2] > Advanced Analytics/Methods (K-means) ##########
+# [1] > Access the census data
+  census <- read.csv("income_elec_state.csv")
+  # convert dataframe to table with new names of cols
+  census_table <- as.data.table(census)
+  colnames(census_table) <- c("state","mean household income","mean electricity usage")
+# [2] Apply K-means
+  census_matrix <- as.matrix(census_table)
+  summary(census_matrix)
+  
+  census_matrix <- sort(census_matrix)
+  
+  census_matrix <- as.numeric(census_matrix) #solve non numeric values
+  census_matrix <- census_matrix[!is.na(census_matrix)]  #remove na values 
+  km <- kmeans( census_matrix, 10 , 15)
+  
+  cat("Km clusters are :  \n")
+  km$cluster
+  cat("Km centers are :  \n")
+  km$centers
+  #plot clusters
+  plot(census_matrix ,col= km$cluster)
+  #Add centers
+  points( km$centers , col =1:10 ,pch=8)
+  
+# [3] > 
+  wss <- numeric(20)
+  for(i in 1:20) wss[i] <- sum(kmeans(census_matrix , centers = i) $withinss)
+  plot(1:20, wss, tybe ="b" , xlab = "number Of Clusters" , ylab = "sum of squares")
+  
+# [4] > log 2 cols and apply Kmeans again
+  census_table[,c(2,3)] <- log10(census_table[,c(2,3)])
+  
+  census_Log <- as.matrix(census_table)
+  summary(census_Log)
+  
+  census_Log <- sort(census_Log)
+  
+  census_Log <- as.numeric(census_Log) #solve non numeric values
+  census_Log <- census_Log[!is.na(census_Log)]  #remove na values 
+  km <- kmeans( census_Log, 10 , 15)
+  
+  cat("Km clusters are :  \n")
+  km$cluster
+  cat("Km centers are :  \n")
+  km$centers
+  #plot clusters
+  plot(census_Log ,col= km$cluster)
+  #Add centers
+  points( km$centers , col =1:10 ,pch=8)
+  
+#[5] > 
+  wss_Log <- numeric(20)
+  for(i in 1:20) wss_Log[i] <- sum(kmeans(census_Log , centers = i) $withinss)
+  plot(1:20, wss_Log, tybe ="b" , xlab = "number Of Clusters" , ylab = "sum of squares")
+  
+  
